@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package service_a;
+
+service UserService {
+  rpc GetUserScore (UserRequest) returns (ScoreResponse) {}
+  rpc UpdateUserScore (UpdateScoreRequest) returns (UpdateResponse) {}
+}
+
+message UserRequest {
+  int32 user_id = 1;
+}
+
+message ScoreResponse {
+  int32 score = 1;
+  int32 games_played = 2;
+  int32 games_won = 3;
+  string username = 4;
+}
+
+message UpdateScoreRequest {
+  int32 user_id = 1;
+  int32 score_change = 2;
+  bool game_won = 3;
+}
+
+message UpdateResponse {
+  bool success = 1;
+  string message = 2;
+}

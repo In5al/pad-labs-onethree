@@ -1,0 +1,16 @@
+flask==2.3.3
+flask-sqlalchemy==3.1.1
+flask-jwt-extended==4.5.2
+flask-cors==3.0.10
+requests==2.31.0
+psycopg2-binary==2.9.7
+werkzeug==2.3.7
+grpcio==1.57.0
+grpcio-tools==1.57.0
+pytest==7.4.3
+psutil==5.9.6
+redis==4.6.0
+eventlet==0.33.3
+python-engineio==4.7.1
+python-socketio==5.9.0
+flask-socketio==5.3.6

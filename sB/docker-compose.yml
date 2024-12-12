@@ -1,0 +1,60 @@
+services:
+  game-service-1:
+    build: .
+    container_name: game-service-1
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/gamedb
+      - REDIS_HOST=redis
+      - REDIS_PORT=6387
+    ports:
+      - 5007:5000
+    networks:
+      - game-network
+
+  game-service-2:
+    build: .
+    container_name: game-service-2
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/gamedb
+      - REDIS_HOST=redis
+      - REDIS_PORT=6387
+    ports:
+      - 5008:5000
+    networks:
+      - game-network
+
+  game-service-3:
+    build: .
+    container_name: game-service-3
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/gamedb
+      - REDIS_HOST=redis
+      - REDIS_PORT=6387
+    ports:
+      - 5009:5000
+    networks:
+      - game-network
+
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - game-network
+
+  redis:
+    image: redis:latest
+    command: ["redis-server", "--port", "6387"]
+    ports:
+      - "6387:6387"
+    networks:
+      - game-network
+
+networks:
+  game-network:
+    driver: bridge
+
+volumes:
+  mongodb_data:

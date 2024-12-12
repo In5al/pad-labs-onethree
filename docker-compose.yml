@@ -1,0 +1,114 @@
+version: '3.8'
+
+services:
+  postgres_a:
+    image: postgres:14
+    container_name: postgres_a
+    volumes:
+      - postgres_data_a:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: service_a_db
+      POSTGRES_USER: service_a_user
+      POSTGRES_PASSWORD: service_a_password
+    ports:
+      - "5432:5432"
+
+  postgres_b:
+    image: postgres:14
+    container_name: postgres_b
+    volumes:
+      - postgres_data_b:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: service_b_db
+      POSTGRES_USER: service_b_user
+      POSTGRES_PASSWORD: service_b_password
+    ports:
+      - "5433:5432"
+
+  service_redis:
+    image: redis:latest
+    command: ["redis-server", "--port", "6379"]
+    ports:
+      - "6379:6379"
+
+  service-a:
+    container_name: service-a
+    build:
+      context: ./sA
+    entrypoint: ["./entrypoint.sh"]
+    volumes:
+      - ./sA:/app
+    depends_on:
+      - postgres_a
+      - api-gateway
+    environment:
+      - DJANGO_SETTINGS_MODULE=sA.settings
+      - DATABASE_URL=postgres://service_a_user:service_a_password@postgres_a:5432/service_a_db
+      - API_GATEWAY_BASE_URL=http://api-gateway:8080/
+      - SERVICE_TYPE=A
+      - SD_HOST=service-discovery
+      - SD_PORT=50051
+    ports:
+      - "8000:8000"
+
+  service-b:
+    container_name: service-b
+    build:
+      context: ./sB
+    entrypoint: ["./entrypoint.sh"]
+    volumes:
+      - ./sB:/app
+    depends_on:
+      - postgres_b
+      - api-gateway
+      - service_redis
+    environment:
+      - DJANGO_SETTINGS_MODULE=sB.settings
+      - DATABASE_URL=postgres://service_b_user:service_b_password@postgres_b:5432/service_b_db
+      - API_GATEWAY_BASE_URL=http://api-gateway:8080/
+      - CHANNELS_REDIS_HOST=service_redis
+      - CHANNELS_REDIS_PORT=6379
+      - SERVICE_TYPE=B
+      - SD_HOST=service-discovery
+      - SD_PORT=50051
+    ports:
+      - "8001:8000"
+
+  sm_redis:
+    image: redis:latest
+    command: ["redis-server", "--port", "6382"]
+    ports:
+      - "6382:6382"
+
+  api-gateway:
+    container_name: api-gateway
+    build:
+      context: ./api-gateway
+    environment:
+      - PORT=8080
+      - SM_REDIS_URL=redis://sm_redis:6379
+      - SERV_REST_PORT=8000
+      - SERVER_TIMEOUT_MS=4000
+      - MAX_CONCURRENT_REQUESTS=10
+    ports:
+      - "8080:8080"
+    depends_on:
+      - sm_redis
+      - service-discovery
+
+  service-discovery:
+    container_name: service-discovery
+    build:
+      context: ./service-discovery
+    environment:
+      - PORT=50051
+      - SM_REDIS_URL=redis://sm_redis:6379
+      - SERV_REST_PORT=8000
+    ports:
+      - "50051:50051"
+    depends_on:
+      - sm_redis
+
+volumes:
+  postgres_data_a:
+  postgres_data_b:

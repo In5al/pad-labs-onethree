@@ -1,0 +1,47 @@
+networks:
+  api-gateway_app-network:
+    external: true
+  service-a-network:
+    driver: bridge
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres-service-a
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: userdb
+    networks:
+      - service-a-network
+      - api-gateway_app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d userdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  service-a:
+    build: .
+    container_name: service-a
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://user:password@postgres-service-a:5432/userdb
+      - JWT_SECRET_KEY=jwtsecret123  # Change this
+      - GATEWAY_SECRET=test123   # Change this and match it with API Gateway
+      - REDIS_HOST=api-gateway-redis-1
+      - REDIS_PORT=6379
+    networks:
+      - service-a-network
+      - api-gateway_app-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
